@@ -1,13 +1,20 @@
 import pygame
 import os
 
+#have a font for the text in the game
+pygame.font.init()
+
 # setting the width and height as constants to the size of the game window
 WIDTH, HEIGHT = 900, 500
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 
 # set the game display name
 pygame.display.set_caption(("Harry Potter Duels"))
+
+HEALTH_TEXT = pygame.font.SysFont("comicsans", 55)
+
 # predefine a color for the game
+# pygame uses RGB and takes it as a tuple:
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -38,19 +45,33 @@ HERMIONE_IMAGE = pygame.image.load(os.path.join("players", "IMG_2286.PNG"))
 HERMIONE_IMAGE = pygame.transform.rotate(pygame.transform.scale(
     HERMIONE_IMAGE, (PLAYER_WIDTH, PLAYER_HEIGHT)), 180)
 
+# scale so that the image will fit nicely
+BACKGROUND = pygame.transform.scale(pygame.image.load(os.path.join("backgrounds", "lego_grass.jpeg")), (WIDTH, HEIGHT))
 
-def draw_window(harry, hermione, harry_bullets, hermione_bullets):
+
+def draw_window(harry, hermione, harry_bullets, hermione_bullets, harry_health, hermione_health):
 
     # NOTE DRAW things in order, otherwise they stack on top of each other
     # we set the window color.
-    # pygame uses RGB and takes it as a tuple:
-    WIN.fill(WHITE)
+    # FIRST USE THIS: WIN.fill(WHITE)
+    WIN.blit(BACKGROUND, (0, 0))
+
     # DRAW THE MIDDLE BORDER to the WIN for window, BLACK for color and BORDER for my pre defined rectangle
     pygame.draw.rect(WIN, BLACK, BORDER)
+    # render some health stats.
+
+    harry_health_text = HEALTH_TEXT.render(f"Health: {str(harry_health)}", 1, WHITE)
+    hermione_health_text = HEALTH_TEXT.render(f"Health: {str(hermione_health)}", 1, WHITE)
+    # 10, 10 and -10, 10 is just padding from where the text will be
+    WIN.blit(harry_health_text, (WIDTH - hermione_health_text.get_width() - 10, 10))
+    WIN.blit(hermione_health_text, (10, 10))
+
     # we use the .blit() to add an image or text to the window
     # image, and then it's position on the window
     WIN.blit(HARRY_IMAGE, (harry.x, harry.y))
     WIN.blit(HERMIONE_IMAGE, (hermione.x, hermione.y))
+
+
 
     # DRAW the bullets for each character
     for bullet in harry_bullets:
@@ -92,6 +113,10 @@ def handle_bullets(harry_bullets, hermione_bullets, harry, hermione):
         if hermione.colliderect(bullet):
             pygame.event.post(pygame.event.Event(HERMIONE_HIT))
             harry_bullets.remove(bullet)
+            # elif so we don't remove it twice, this will remove the bullet if it's off the screen
+            # otherwise it will stay in the list and not allow you to shoot anymore
+        elif bullet.x > WIDTH:
+            harry_bullets.remove(bullet)
 
     for bullet in hermione_bullets:
         # make the bullets go LEFT towards 0, or the left of the screen
@@ -99,6 +124,8 @@ def handle_bullets(harry_bullets, hermione_bullets, harry, hermione):
         # if the bullet collides, then make the bullet disappear
         if harry.colliderect(bullet):
             pygame.event.post(pygame.event.Event(HARRY_HIT))
+            hermione_bullets.remove(bullet)
+        elif bullet.x < 0:
             hermione_bullets.remove(bullet)
 
 # the game will run until x on the window
@@ -108,6 +135,9 @@ def main():
 
     harry_bullets = []
     hermione_bullets = []
+
+    harry_health = 12
+    hermione_health = 12
 
     clock = pygame.time.Clock()
     run = True
@@ -121,13 +151,29 @@ def main():
 
             if event.type == pygame.KEYDOWN:
                 # checking for the bullet shooting event button AND only doing it if they have enough bullets
-                if event.key == pygame.K_e and len(harry_bullets) < MAX_BULLETS:
+                if event.key == pygame.K_SPACE and len(harry_bullets) < MAX_BULLETS:
                     # Where the bullet will come out of the character, the width of the bullet is 10 and height is 5
                     bullet = pygame.Rect(harry.x + harry.width, harry.y + harry.height//2 - 2, 10, 5)
                     harry_bullets.append(bullet)
                 if event.key == pygame.K_m and len(hermione_bullets) < MAX_BULLETS:
                     bullet = pygame.Rect(hermione.x, hermione.y + hermione.height//2 - 2, 10, 5)
                     hermione_bullets.append(bullet)
+
+            # If hit, then minus a health point from the player
+            if event.type == HARRY_HIT:
+                harry_health -= 1
+            if event.type == HERMIONE_HIT:
+                hermione_health -= 1
+
+        end_game_text = ""
+        if harry_health <= 0:
+            end_game_text = "Hermione Wins!"
+        if hermione_health <= 0:
+            end_game_text = "Harry Potter Wins!"
+
+        if end_game_text != "":
+            pass # someone won the game
+
 
         print(harry_bullets, hermione_bullets)
         # Movement function for harry and hermione
@@ -137,7 +183,7 @@ def main():
 
         handle_bullets(harry_bullets, hermione_bullets, harry, hermione)
 
-        draw_window(harry, hermione, harry_bullets, hermione_bullets)
+        draw_window(harry, hermione, harry_bullets, hermione_bullets, harry_health, hermione_health)
 
     pygame.quit()
 
