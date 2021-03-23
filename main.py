@@ -63,8 +63,8 @@ def draw_window(harry, hermione, harry_bullets, hermione_bullets, harry_health, 
     harry_health_text = HEALTH_TEXT.render(f"Health: {str(harry_health)}", 1, WHITE)
     hermione_health_text = HEALTH_TEXT.render(f"Health: {str(hermione_health)}", 1, WHITE)
     # 10, 10 and -10, 10 is just padding from where the text will be
-    WIN.blit(harry_health_text, (WIDTH - hermione_health_text.get_width() - 10, 10))
-    WIN.blit(hermione_health_text, (10, 10))
+    WIN.blit(hermione_health_text, (WIDTH - hermione_health_text.get_width() - 10, 10))
+    WIN.blit(harry_health_text, (10, 10))
 
     # we use the .blit() to add an image or text to the window
     # image, and then it's position on the window
