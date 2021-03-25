@@ -7,7 +7,7 @@ pygame.font.init()
 pygame.mixer.init()
 
 # setting the width and height as constants to the size of the game window
-WIDTH, HEIGHT = 900, 500
+WIDTH, HEIGHT = 1200, 800
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 
 # set the game display name
@@ -20,8 +20,7 @@ WINNER_TEXT = pygame.font.SysFont("roboto", 55)
 # pygame uses RGB and takes it as a tuple:
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-YELLOW = (255, 255, 0)
+
 
 
 # Setting a border for the players to not be able to cross (Rect = rectangle)
@@ -39,18 +38,19 @@ PLAYER_WIDTH, PLAYER_HEIGHT = 150, 150
 
 # LAST THING TO DO ON PROJECT enter sounds that are mp3 files
 # if you're doing wav, mp3 files, do pygame.mixer.Sound(then the path).
+THROW_SOUND = pygame.mixer.Sound(os.path.join("sounds", "throw.wav"))
 GAME_MUSIC = pygame.mixer.Sound(os.path.join("sounds", "office.mp3"))
 INTRO_FIGHT_SOUND = pygame.mixer.Sound(os.path.join("sounds", "ready_fight.wav"))
 JIM_HIT_SOUND = pygame.mixer.Sound(os.path.join("sounds", "jim_ouch.wav"))
-BULLET_FIRE_SOUND = pygame.mixer.Sound(os.path.join("sounds", "spell_shoot.wav"))
 DWIGHT_OUCH_SOUND = pygame.mixer.Sound(os.path.join("sounds", "dwight_ouch.wav"))
 KO_SOUND = pygame.mixer.Sound(os.path.join("sounds", "KO.mp3"))
-# dwight_DIES = pygame.mixer.Sound(os.path.join("sounds", "expelled2.wav"))
 
-# EVENTS in case they get hit. It may look strange but the 1 and 2 is to make them unique, they can't both be 1.
-JIM_HIT = pygame.USEREVENT + 1
-DWIGHT_HIT = pygame.USEREVENT + 2
 
+# EVENTS in case they get hit. It may look strange but the + 1 is to make them unique, they can't both be 1.
+JIM_HIT = pygame.USEREVENT
+DWIGHT_HIT = pygame.USEREVENT + 1
+
+# assign images to jim and dwight
 JIM_IMAGE = pygame.image.load(os.path.join("players", "jim.png"))
 JIM_IMAGE = pygame.transform.rotate(pygame.transform.scale(
     JIM_IMAGE, (PLAYER_WIDTH, PLAYER_HEIGHT)), 0)
@@ -86,8 +86,6 @@ def draw_window(jim, dwight, jim_bullets, dwight_bullets, jim_health, dwight_hea
     WIN.blit(JIM_IMAGE, (jim.x, jim.y))
     WIN.blit(DWIGHT_IMAGE, (dwight.x, dwight.y))
 
-
-
     # DRAW the bullets for each character
     for bullet in jim_bullets:
         pygame.draw.rect(WIN, WHITE, bullet)
@@ -100,6 +98,7 @@ def draw_window(jim, dwight, jim_bullets, dwight_bullets, jim_health, dwight_hea
     # The new display setting white will not update unless we do the following update code:
     pygame.display.update()
 
+
 def draw_winner(text):
     KO_SOUND.play()
     draw_text = WINNER_TEXT.render(text, 1, WHITE)
@@ -110,26 +109,26 @@ def draw_winner(text):
     # this pause will display for however many miliseconds
     pygame.time.delay(5000)
 
-def handle_jim_movement(keys_pressed, jim):
+def handle_jim_movement(key_press, jim):
     # moving the players around which will update it's position every time it loops
-    if keys_pressed[pygame.K_a] and jim.x - VEL > 0:  # left key AND prevent him from moving past the left screen border
+    if key_press[pygame.K_a] and jim.x - VEL > 0:  # left key AND prevent him from moving past the left screen border
         jim.x -= VEL
-    if keys_pressed[pygame.K_d] and jim.x + VEL + jim.width < BORDER.x: # right key AND prevent him from moving past the center screen border
+    if key_press[pygame.K_d] and jim.x + VEL + jim.width < BORDER.x: # right key AND prevent him from moving past the center screen border
         jim.x += VEL
-    if keys_pressed[pygame.K_w] and jim.y - VEL > 0:  # up key
+    if key_press[pygame.K_w] and jim.y - VEL > 0:  # up key
         jim.y -= VEL
-    if keys_pressed[pygame.K_s] and jim.y + VEL + jim.height < HEIGHT:  # down key
+    if key_press[pygame.K_s] and jim.y + VEL + jim.height < HEIGHT:  # down key
         jim.y += VEL
 
-def handle_dwight_movement(keys_pressed, dwight):
+def handle_dwight_movement(key_press, dwight):
     # moving the players around which will update it's position every time it loops
-    if keys_pressed[pygame.K_LEFT] and dwight.x - VEL > BORDER.x + BORDER.width:  # left key
+    if key_press[pygame.K_LEFT] and dwight.x - VEL > BORDER.x + BORDER.width:  # left key
         dwight.x -= VEL
-    if keys_pressed[pygame.K_RIGHT] and dwight.x + VEL + dwight.width < WIDTH:  # right key
+    if key_press[pygame.K_RIGHT] and dwight.x + VEL + dwight.width < WIDTH:  # right key
         dwight.x += VEL
-    if keys_pressed[pygame.K_UP] and dwight.y - VEL > 0:  # up key
+    if key_press[pygame.K_UP] and dwight.y - VEL > 0:  # up key
         dwight.y -= VEL
-    if keys_pressed[pygame.K_DOWN] and dwight.y + VEL + dwight.height < HEIGHT:  # down key
+    if key_press[pygame.K_DOWN] and dwight.y + VEL + dwight.height < HEIGHT:  # down key
         dwight.y += VEL
 
 def handle_bullets(jim_bullets, dwight_bullets, jim, dwight):
@@ -158,6 +157,7 @@ def handle_bullets(jim_bullets, dwight_bullets, jim, dwight):
 
 # the game will run until x on the window
 def main():
+    # (x, y, width, height)
     jim = pygame.Rect(100, 300, PLAYER_WIDTH, PLAYER_HEIGHT)
     dwight = pygame.Rect(700, 300, PLAYER_WIDTH, PLAYER_HEIGHT)
 
@@ -167,35 +167,39 @@ def main():
     jim_health = 12
     dwight_health = 12
 
+    # clock will help the loop/game keep better track of time, FPS is in the while loop
     clock = pygame.time.Clock()
-    run = True
+    run_game = True
     # This will play every time the game starts, even on a restart
     # preset the volume and how many times it will loop and fade is the amount of time for fading at start and end
     GAME_MUSIC.set_volume(0.1)
     GAME_MUSIC.play(loops=10, fade_ms=3000)
     INTRO_FIGHT_SOUND.play()
 
-    while run:
+    while run_game:
 
         # The speed of the while loop:
         clock.tick(FPS)
-        # if i hit x, the loop will break and end the game window
+        # if i hit the x on the window, the loop will break and end the game window
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
+                run_game = False
                 # add the following at the VERY END so that it quits instead of restarts when they click the x
                 pygame.quit()
+
+            # KEYDOWN allows you to hold down a key but we don't want them to while
+            # shooting.
             if event.type == pygame.KEYDOWN:
                 # checking for the bullet shooting event button AND only doing it if they have enough bullets
                 if event.key == pygame.K_SPACE and len(jim_bullets) < MAX_BULLETS:
                     # Where the bullet will come out of the character, the width of the bullet is 10 and height is 5
                     bullet = pygame.Rect(jim.x + jim.width, jim.y + jim.height//2 - 2, 10, 5)
                     jim_bullets.append(bullet)
-                    BULLET_FIRE_SOUND.play()
+                    THROW_SOUND.play()
                 if event.key == pygame.K_m and len(dwight_bullets) < MAX_BULLETS:
                     bullet = pygame.Rect(dwight.x, dwight.y + dwight.height//2 - 2, 10, 5)
                     dwight_bullets.append(bullet)
-                    BULLET_FIRE_SOUND.play()
+                    THROW_SOUND.play()
 
             # If hit, then minus a health point from the player
             if event.type == JIM_HIT:
@@ -217,12 +221,12 @@ def main():
             draw_winner(end_game_text)
             break
 
-
+        # you can test the bullets and see if the list appends and removes
         print(jim_bullets, dwight_bullets)
         # Movement function for jim and dwight
-        keys_pressed = pygame.key.get_pressed()
-        handle_jim_movement(keys_pressed, jim)
-        handle_dwight_movement(keys_pressed, dwight)
+        key_press = pygame.key.get_pressed()
+        handle_jim_movement(key_press, jim)
+        handle_dwight_movement(key_press, dwight)
 
         handle_bullets(jim_bullets, dwight_bullets, jim, dwight)
 
