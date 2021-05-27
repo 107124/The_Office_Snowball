@@ -69,6 +69,7 @@ def draw_window(jim, dwight, jim_bullets, dwight_bullets, jim_health, dwight_hea
     # NOTE DRAW things in order, otherwise they stack on top of each other
     # we set the window color.
     # FIRST USE THIS: WIN.fill(WHITE)
+    # The (0, 0) is for the padding
     WIN.blit(BACKGROUND, (0, 0))
 
     # DRAW THE MIDDLE BORDER to the WIN for window, BLACK for color and BORDER for my pre defined rectangle
